@@ -95,17 +95,16 @@ pub extern "C" fn jwt_auth_generate(
     output_ptr: usize,
     output_max_len: usize,
 ) -> u32 {
-    eprintln!("Generating token for context {}, user ID at {}, length {}", 
-              ctx_id, user_id_ptr, user_id_len);
+    // eprintln!("Generating token for context {}, user ID at {}, length {}", ctx_id, user_id_ptr, user_id_len);
     
     // Read user ID
     let user_id = unsafe {
         let bytes = memory::copy_from_mem(user_id_ptr, user_id_len);
-        eprintln!("Read user ID bytes: {:?}", bytes);
+        // eprintln!("Read user ID bytes: {:?}", bytes);
         
         match std::str::from_utf8(&bytes) {
             Ok(s) => {
-                eprintln!("Parsed user ID: '{}'", s);
+                // eprintln!("Parsed user ID: '{}'", s);
                 s.to_string()
             },
             Err(e) => {
@@ -154,7 +153,7 @@ pub extern "C" fn jwt_auth_generate(
         }
     };
     
-    eprintln!("Generated token: {}", token);
+    // eprintln!("Generated token: {}", token);
     
     // Store for debugging
     {
@@ -177,7 +176,7 @@ pub extern "C" fn jwt_auth_generate(
         memory::copy_to_mem(&null_byte as *const u8, 1, output_ptr + token_bytes.len());
     }
     
-    eprintln!("Token written to output buffer");
+    // eprintln!("Token written to output buffer");
     
     // Return token length
     token_bytes.len() as u32
