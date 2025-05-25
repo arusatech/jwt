@@ -14,6 +14,8 @@ sudo apt install wabt
 rustup target add wasm32-wasip1
 cargo clean
 cargo build --target wasm32-wasip1 --release
+or
+cargo build --target wasm32-wasip1 --release && mkdir -p libs/jwt/wasm && cp target/wasm32-wasip1/release/rust_wasi_jwt.wasm libs/jwt/wasm/
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
