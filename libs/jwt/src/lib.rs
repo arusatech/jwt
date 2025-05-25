@@ -1,6 +1,7 @@
 use std::sync::Mutex;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
+use jsonwebtoken::{encode, decode, Header, Validation, EncodingKey, DecodingKey, Algorithm};
 
 // Store the last generated token for debugging
 static LAST_TOKEN: Lazy<Mutex<String>> = Lazy::new(|| Mutex::new(String::new()));
@@ -140,27 +141,18 @@ pub extern "C" fn jwt_auth_generate(
         exp: now + validity,
     };
     
-    // In real implementation, we would use a JWT library
-    // For this example, we'll create a simple "fake" JWT
-    
-    // Header (hardcoded for simplicity)
-    let header = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9";
-    
-    // Payload (base64 encode the claims)
-    let claims_json = match serde_json::to_string(&claims) {
-        Ok(j) => j,
+    // Generate JWT using jsonwebtoken crate
+    let token = match encode(
+        &Header::default(),
+        &claims,
+        &EncodingKey::from_secret(secret.as_bytes())
+    ) {
+        Ok(t) => t,
         Err(e) => {
-            eprintln!("Error serializing claims: {}", e);
+            eprintln!("Error encoding JWT: {}", e);
             return 0; // Error
         }
     };
-    eprintln!("Claims JSON: {}", claims_json);
-    
-    // Simulated JWT for testing
-    // In production, use a proper JWT library like jsonwebtoken
-    let token = format!("{}.{}.SIGNATURE", 
-                      header, 
-                      base64::encode(claims_json));
     
     eprintln!("Generated token: {}", token);
     
@@ -216,7 +208,7 @@ pub extern "C" fn jwt_auth_validate(
     eprintln!("Read token: {}", token);
     
     // Get context
-    let _secret = {  // Add underscore to indicate intentionally unused
+    let secret = {
         let contexts = CONTEXTS.lock().unwrap();
         let ctx = match contexts.iter().find(|c| c.id == ctx_id as usize) {
             Some(c) => c,
@@ -228,25 +220,23 @@ pub extern "C" fn jwt_auth_validate(
         ctx.secret.clone()
     };
     
-    // In a real implementation, we would use the secret to verify the signature
-    // For now, we'll just check if it's one we generated
+    // Validate JWT using jsonwebtoken crate
+    let validation = Validation::new(Algorithm::HS256);
     
-    // Split token into parts
-    let parts: Vec<&str> = token.split('.').collect();
-    if parts.len() != 3 {
-        eprintln!("Invalid token format");
-        return 0; // Invalid
+    match decode::<JWTClaims>(
+        &token,
+        &DecodingKey::from_secret(secret.as_bytes()),
+        &validation
+    ) {
+        Ok(_) => {
+            eprintln!("Token validated");
+            1 // Valid
+        },
+        Err(e) => {
+            eprintln!("Token validation failed: {}", e);
+            0 // Invalid
+        }
     }
-    
-    // For this simple implementation, just check if it's one we generated
-    let last_token = LAST_TOKEN.lock().unwrap();
-    if token == *last_token {
-        eprintln!("Token validated");
-        return 1; // Valid
-    }
-    
-    eprintln!("Token validation failed");
-    0 // Invalid
 }
 
 // Free a JWT context

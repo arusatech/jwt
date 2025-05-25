@@ -14,6 +14,9 @@ sudo apt install wabt
 rustup target add wasm32-wasip1
 cargo clean
 cargo build --target wasm32-wasip1 --release
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
 
 
 ```
@@ -26,5 +29,7 @@ wasm_path = os.environ.get("WASM_PATH", "/home/ymohammad/rust-wasi-jwt/target/wa
 #Run
 cd jwt
 uvicorn api.main:app --reload
+#in other teerminal send :
+curl -X POST "http://localhost:8000/auth/login"   -H "Content-Type: application/json"   -d '{"username": "user123"}'
 ```
 

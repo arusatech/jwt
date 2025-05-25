@@ -8,7 +8,7 @@ from jsonpath_nz import log, jprint
 app = FastAPI(title="JWT Authentication Service")
 
 # Initialize JWT client
-wasm_path = os.environ.get("WASM_PATH", "/home/ymohammad/rust-wasi-jwt/target/wasm32-wasip1/release/rust_wasi_jwt.wasm")
+wasm_path = os.environ.get("WASM_PATH", "/home/ymohammad/jwt/target/wasm32-wasip1/release/rust_wasi_jwt.wasm")
 jwt_client = JWTClient(wasm_path)
 log.info(jwt_client)
 
