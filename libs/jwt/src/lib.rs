@@ -48,7 +48,7 @@ pub extern "C" fn jwt_auth_create_context(
     validity: u64
 ) -> u32 {
     // Log parameters
-    eprintln!("Creating JWT context with validity: {}", validity);
+    // eprintln!("Creating JWT context with validity: {}", validity);
     
     // Read secret key
     let secret = unsafe {
@@ -62,7 +62,7 @@ pub extern "C" fn jwt_auth_create_context(
         }
     };
     
-    eprintln!("Read secret key: {}", secret);
+    // eprintln!("Read secret key: {}", secret);
     
     // Generate a context ID (simple incrementing ID)
     let ctx_id = {
@@ -80,7 +80,7 @@ pub extern "C" fn jwt_auth_create_context(
         });
     }
     
-    eprintln!("Created JWT context: {}", ctx_id);
+    // eprintln!("Created JWT context: {}", ctx_id);
     
     // Return context ID
     ctx_id as u32
@@ -189,8 +189,8 @@ pub extern "C" fn jwt_auth_validate(
     token_ptr: usize,
     token_len: usize,
 ) -> u32 {
-    eprintln!("Validating token for context {}, token at {}, length {}", 
-              ctx_id, token_ptr, token_len);
+    // eprintln!("Validating token for context {}, token at {}, length {}", 
+    //           ctx_id, token_ptr, token_len);
     
     // Read token
     let token = unsafe {
@@ -204,7 +204,7 @@ pub extern "C" fn jwt_auth_validate(
         }
     };
     
-    eprintln!("Read token: {}", token);
+    // eprintln!("Read token: {}", token);
     
     // Get context
     let secret = {
@@ -228,7 +228,7 @@ pub extern "C" fn jwt_auth_validate(
         &validation
     ) {
         Ok(_) => {
-            eprintln!("Token validated");
+            // eprintln!("Token validated");
             1 // Valid
         },
         Err(e) => {
@@ -241,7 +241,7 @@ pub extern "C" fn jwt_auth_validate(
 // Free a JWT context
 #[no_mangle]
 pub extern "C" fn jwt_auth_free_context(ctx_id: u32) -> u32 {
-    eprintln!("Freeing context {}", ctx_id);
+    // eprintln!("Freeing context {}", ctx_id);
     
     let mut contexts = CONTEXTS.lock().unwrap();
     let index = match contexts.iter().position(|c| c.id == ctx_id as usize) {
@@ -253,7 +253,7 @@ pub extern "C" fn jwt_auth_free_context(ctx_id: u32) -> u32 {
     };
     
     contexts.remove(index);
-    eprintln!("Context {} removed", ctx_id);
+    // eprintln!("Context {} removed", ctx_id);
     
     1 // Success
 }
