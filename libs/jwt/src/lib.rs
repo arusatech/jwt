@@ -238,6 +238,76 @@ pub extern "C" fn jwt_auth_validate(
     }
 }
 
+#[no_mangle]
+pub extern "C" fn jwt_auth_get_user_id(
+    ctx_id: u32, 
+    token_ptr: usize,  // Add parameter for token
+    token_len: usize,  // Add parameter for token length
+    output_ptr: usize, 
+    output_max_len: usize
+) -> u32 {
+    // Read token
+    let token = unsafe {
+        let bytes = memory::copy_from_mem(token_ptr, token_len);
+        match std::str::from_utf8(&bytes) {
+            Ok(s) => s.to_string(),
+            Err(e) => {
+                eprintln!("Error reading token: {}", e);
+                return 0; // Invalid
+            }
+        }
+    };
+    
+    // Get context
+    let secret = {  
+        let contexts = CONTEXTS.lock().unwrap();
+        let ctx = match contexts.iter().find(|c| c.id == ctx_id as usize) {
+            Some(c) => c,
+            None => {
+                eprintln!("Context {} not found", ctx_id);
+                return 0; // Error
+            }
+        };
+        ctx.secret.clone()
+    };
+    
+    // Validate JWT using jsonwebtoken crate
+    let validation = Validation::new(Algorithm::HS256);
+    
+    match decode::<JWTClaims>(
+        &token,
+        &DecodingKey::from_secret(secret.as_bytes()),
+        &validation
+    ) {
+        Ok(token_data) => {
+            // Get the user ID (subject) from the claims
+            let user_id = token_data.claims.sub;
+    
+            // Write user ID to output buffer
+            let user_id_bytes = user_id.as_bytes();
+            if user_id_bytes.len() >= output_max_len {
+                eprintln!("Output buffer too small for user ID");
+                return 0; // Error
+            }
+    
+            unsafe {
+                memory::copy_to_mem(user_id_bytes.as_ptr(), user_id_bytes.len(), output_ptr);
+                
+                // Add null terminator
+                let null_byte: u8 = 0;
+                memory::copy_to_mem(&null_byte as *const u8, 1, output_ptr + user_id_bytes.len());
+            }
+    
+            // Return length of user ID so caller knows how many bytes to read
+            user_id_bytes.len() as u32
+        },  
+        Err(e) => {
+            eprintln!("Error getting user ID: {}", e);
+            return 0; // Error
+        }
+    }
+}
+
 // Free a JWT context
 #[no_mangle]
 pub extern "C" fn jwt_auth_free_context(ctx_id: u32) -> u32 {

@@ -246,6 +246,39 @@ class JWTClient:
             # log.info(traceback.format_exc())
             return False
 
+    def get_user_id(self, ctx_id, token):
+        """Get user ID from JWT token"""
+        try:
+            # log.info(f"<Client> Getting user ID from token for context {ctx_id}")
+            
+            # Get exports
+            exports = self.instance.exports(self.store)
+            if "jwt_auth_get_user_id" not in exports:
+                # log.info("<Client> 'jwt_auth_validate' function not found")
+                return False
+            
+            # Write token to memory
+            token_ptr = self.write_string(token)
+            
+            output_buffer_size = 40
+            output_buffer_ptr = exports["alloc"](self.store, output_buffer_size)
+            
+            
+            # Call validate function
+            result = exports["jwt_auth_get_user_id"](
+                self.store, ctx_id, token_ptr, len(token), output_buffer_ptr, output_buffer_size)
+            
+            user_id = self.read_string(output_buffer_ptr, result)
+            log.info(f"<Client> User ID: {user_id}")
+
+            return user_id
+        except Exception as e:
+            # log.info(f"<Client> Error validating token: {e}")
+            import traceback
+            # log.info(traceback.format_exc())
+            return False
+
+    
     def free_auth_context(self, ctx_id):
         """Free JWT auth context"""
         try:
@@ -275,3 +308,4 @@ class JWTClient:
     generate_auth_token = generate_token
     validate_auth_token = validate_token
     free_context = free_auth_context
+    get_validated_user_id = get_user_id
